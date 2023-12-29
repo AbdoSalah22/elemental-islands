@@ -4,7 +4,7 @@ import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.j
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Water } from 'three/addons/objects/Water.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
+import { PositionalAudio } from 'three';
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -24,7 +24,7 @@ const camera = new THREE.PerspectiveCamera(fieldOfView, aspectRatio, zNear, zFar
 
 // Orbit Controls
 const orbit = new OrbitControls(camera, renderer.domElement);
-camera.position.set(60, 80, 140);
+camera.position.set(6, 8, 14);
 orbit.update();
 
 // First Person Controls
@@ -43,6 +43,47 @@ scene.add(gridHelper);
 const axesHelper = new THREE.AxesHelper(4);
 scene.add(axesHelper);
 
+
+// Set up audio listener and load background music
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+const audioLoader = new THREE.AudioLoader();
+const sound = new THREE.PositionalAudio(listener);
+
+// Function to start audio playback
+function startAudioPlayback() {
+  audioLoader.load('audio/korra.mp3',
+    // Success callback
+    function (buffer) {
+      sound.setBuffer(buffer);
+      sound.play();
+    },
+    // Error callback
+    function (xhr) {
+      console.error('Error loading audio:', xhr);
+    }
+  );
+}
+
+// Connect the audio source to the camera
+camera.add(sound);
+
+// Listen for the 'keydown' event on the document
+document.addEventListener('keydown', function (event) {
+  // Check if the pressed key is the keypad down arrow (key code 40)
+  if (event.code === 'ArrowDown') {
+    startAudioPlayback();
+  }
+});
+
+// Listen for a user interaction event (e.g., mouse click) to set up audio listener
+document.addEventListener('click', function () {
+  // Set up audio listener and start audio playback
+  listener.context.resume().then(() => {
+    startAudioPlayback();
+  });
+});
 
 // Water
 const waterGeometry = new THREE.PlaneGeometry(1000, 1000);
@@ -84,8 +125,8 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
 scene.add(ambientLight);
 
 // Sun Light
-const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
-sunLight.position.set(80, 120, 20);
+const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+sunLight.position.set(50, 100, 5);
 scene.add(sunLight);
 sunLight.castShadow = true;
 
@@ -97,25 +138,52 @@ let airIslandLoaded;
 const airIslandLoader = new GLTFLoader();
 airIslandLoader.load('models/floating_island2/scene.gltf', (gltf) => {
     airIslandLoaded = gltf;
-    gltf.scene.position.x = 100;
-    gltf.scene.position.y = 0;
-    gltf.scene.scale.set(15, 15, 15);
+    gltf.scene.position.x = 70;
+    gltf.scene.position.y = -5;
+    gltf.scene.position.z = 10;
+    gltf.scene.scale.set(10, 10, 10);
     scene.add(gltf.scene);
 });
+
 
 // Air Temple
 let airTempleLoaded;
 const airTempleLoader = new GLTFLoader();
 airTempleLoader.load('models/greek_temple1/scene.gltf', (gltf) => {
     airTempleLoaded = gltf;
-    gltf.scene.position.x = 80;
-    gltf.scene.position.y = 30;
-    gltf.scene.position.z = 15;
+    gltf.scene.position.x = 50;
+    gltf.scene.position.y = 15;
+    gltf.scene.position.z = 20;
     gltf.scene.rotation.y = 0.5;
-    gltf.scene.scale.set(0.05, 0.05, 0.05);
+    gltf.scene.scale.set(0.03, 0.03, 0.03);
     scene.add(gltf.scene);
 });
 
+
+// Earth Island
+const earthIslandLoader = new GLTFLoader();
+earthIslandLoader.load('models/desert_island2/scene.gltf', (gltf) => {
+    const model = gltf.scene;
+    model.position.x = -80;
+    model.position.y = 10;
+    model.position.z = 80;
+    model.rotation.y = 180;
+    model.scale.set(5, 5, 5);
+    scene.add(model);
+});
+
+
+// Water Island
+const waterIslandLoader = new GLTFLoader();
+waterIslandLoader.load('models/ice_island5/scene.gltf', (gltf) => {
+    const model = gltf.scene;
+    model.position.x = 30;
+    model.position.y = -2.3;
+    model.position.z = 90;
+    model.rotation.y = 90;
+    model.scale.set(40, 40, 40);
+    scene.add(model);
+});
 
 
 
@@ -149,7 +217,7 @@ fireTempleLoader.load('models/fire_temple1/scene.gltf', (gltf) => {
 
 
 // Flame Animated
-let mixer;
+let flameMixer;
 const fireLoader = new GLTFLoader();
 fireLoader.load('models/fire_animation/scene.gltf', (gltf) => {
     const model = gltf.scene;
@@ -161,12 +229,12 @@ fireLoader.load('models/fire_animation/scene.gltf', (gltf) => {
 
     const animations = gltf.animations;
     if (animations && animations.length) {
-        mixer = new THREE.AnimationMixer(model);
+        flameMixer = new THREE.AnimationMixer(model);
         animations.forEach((clip) => {
-            const action = mixer.clipAction(clip);
+            const action = flameMixer.clipAction(clip);
             action.play();
         });
-        model.mixer = mixer;
+        model.flameMixer = flameMixer;
     }
 });
 
@@ -210,19 +278,19 @@ function animate() {
     });
 
     // Flame Animation
-    if (mixer) {
-        mixer.update(delta);
+    if (flameMixer) {
+        flameMixer.update(delta);
     }
     controls.update(delta);
 
     // Water Animation
     water.material.uniforms['time'].value += 1.0 / 60.0;
 
-    //Air Island and Temple Animation
-    if (airTempleLoaded) {
-        airIslandLoaded.scene.position.y += Math.sin(time) * 0.1;
-        airTempleLoaded.scene.position.y += Math.sin(time) * 0.1;
-    }
+    // //Air Island and Temple Animation
+    // if (airTempleLoaded) {
+    //     airIslandLoaded.scene.position.y += Math.sin(time) * 0.1;
+    //     airTempleLoaded.scene.position.y += Math.sin(time) * 0.1;
+    // }
 
     stats.update();
     requestAnimationFrame(animate);
