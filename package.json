@@ -1,0 +1,19 @@
+{
+  "name": "proj2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "three": "^0.160.0",
+    "three-particle-fire": "^0.1.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.10"
+  }
+}
