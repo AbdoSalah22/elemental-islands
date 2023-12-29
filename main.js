@@ -24,7 +24,7 @@ const camera = new THREE.PerspectiveCamera(fieldOfView, aspectRatio, zNear, zFar
 
 // Orbit Controls
 const orbit = new OrbitControls(camera, renderer.domElement);
-camera.position.set(6, 8, 14);
+camera.position.set(30, 40, 28);
 orbit.update();
 
 // First Person Controls
@@ -60,8 +60,8 @@ function startAudioPlayback() {
       sound.play();
     },
     // Error callback
-    function (xhr) {
-      console.error('Error loading audio:', xhr);
+    function (e) {
+      console.error('Error loading audio:', e);
     }
   );
 }
@@ -121,28 +121,32 @@ scene.add(skybox);
 
 
 // Ambient Light
-const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
 // Sun Light
-const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
 sunLight.position.set(50, 100, 5);
 scene.add(sunLight);
 sunLight.castShadow = true;
 
 
+// Distant Fog
+scene.fog = new THREE.Fog(0xffffff, 600, 1000);
 
 
 // Air Island
+const lodAirIsland = new THREE.LOD();
 let airIslandLoaded;
 const airIslandLoader = new GLTFLoader();
 airIslandLoader.load('models/floating_island2/scene.gltf', (gltf) => {
     airIslandLoaded = gltf;
-    gltf.scene.position.x = 70;
-    gltf.scene.position.y = -5;
-    gltf.scene.position.z = 10;
-    gltf.scene.scale.set(10, 10, 10);
-    scene.add(gltf.scene);
+    const model = gltf.scene
+    model.position.x = 70;
+    model.position.y = -5;
+    model.position.z = 10;
+    model.scale.set(10, 10, 10);
+    scene.add(model);
 });
 
 
@@ -241,7 +245,11 @@ fireLoader.load('models/fire_animation/scene.gltf', (gltf) => {
 
 // Set up grass cube
 const cubeGeometry = new THREE.BoxGeometry(11, 10, 11);
-const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+const cubeMaterial = new THREE.MeshStandardMaterial({
+    color: 0xffff00,
+    roughness: 0.7,
+    metalness: 0.5,
+});
 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 scene.add(cube);
 
@@ -263,6 +271,12 @@ for (let i = 0; i < grassCount; i++) {
 scene.add(grassGroup);
 
 
+// LOD
+function updateLOD(camera) {
+    lodAirIsland.update(camera);
+    // Not working properly
+    // ... update other LOD objects as needed
+}
 
 // Animation
 const clock = new THREE.Clock();
@@ -286,13 +300,14 @@ function animate() {
     // Water Animation
     water.material.uniforms['time'].value += 1.0 / 60.0;
 
-    // //Air Island and Temple Animation
-    // if (airTempleLoaded) {
-    //     airIslandLoaded.scene.position.y += Math.sin(time) * 0.1;
-    //     airTempleLoaded.scene.position.y += Math.sin(time) * 0.1;
-    // }
+    //Air Island and Temple Animation
+    if (airTempleLoaded) {
+        airIslandLoaded.scene.position.y += Math.sin(time) * 0.1;
+        airTempleLoaded.scene.position.y += Math.sin(time) * 0.1;
+    }
 
     stats.update();
+    updateLOD(camera);
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
@@ -308,18 +323,16 @@ window.addEventListener('resize', function () {
 });
 
 
-// // Box
-// const boxGeometry = new THREE.BoxGeometry( 10, 10, 10 );
-// const boxMaterial = new THREE.MeshStandardMaterial( { roughness: 0 } );
-// let boxMesh = new THREE.Mesh( boxGeometry, boxMaterial );
-// boxMesh.receiveShadow = true;
-// boxMesh.castShadow = true;
-// scene.add( boxMesh );
+// Preloader
+const preloader = document.getElementById('preloader');
+const appContainer = document.getElementById('app');
 
-// // Box 2
-// const boxGeometry2 = new THREE.BoxGeometry( 1, 20, 1 );
-// const boxMaterial2 = new THREE.MeshStandardMaterial( { roughness: 0 } );
-// let boxMesh2 = new THREE.Mesh( boxGeometry2, boxMaterial2 );
-// boxMesh2.receiveShadow = true;
-// boxMesh2.castShadow = true;
-// scene.add( boxMesh2 );
+function loadAssets() {
+    setTimeout(() => {
+        preloader.style.display = 'none';
+        appContainer.style.display = 'block';
+        animate();
+    }, 2000);
+}
+
+loadAssets();
