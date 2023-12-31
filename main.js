@@ -4,7 +4,6 @@ import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.j
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Water } from 'three/addons/objects/Water.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { PositionalAudio } from 'three';
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -136,37 +135,22 @@ scene.fog = new THREE.Fog(0xffffff, 600, 1000);
 
 
 // Air Island
-const lodAirIsland = new THREE.LOD();
 let airIslandLoaded;
 const airIslandLoader = new GLTFLoader();
-airIslandLoader.load('models/floating_island2/scene.gltf', (gltf) => {
+airIslandLoader.load('models/air_island/scene.gltf', (gltf) => {
     airIslandLoaded = gltf;
     const model = gltf.scene
     model.position.x = 70;
-    model.position.y = -5;
+    model.position.y = 60;
     model.position.z = 10;
     model.scale.set(10, 10, 10);
     scene.add(model);
 });
 
 
-// Air Temple
-let airTempleLoaded;
-const airTempleLoader = new GLTFLoader();
-airTempleLoader.load('models/greek_temple1/scene.gltf', (gltf) => {
-    airTempleLoaded = gltf;
-    gltf.scene.position.x = 50;
-    gltf.scene.position.y = 15;
-    gltf.scene.position.z = 20;
-    gltf.scene.rotation.y = 0.5;
-    gltf.scene.scale.set(0.03, 0.03, 0.03);
-    scene.add(gltf.scene);
-});
-
-
 // Earth Island
 const earthIslandLoader = new GLTFLoader();
-earthIslandLoader.load('models/desert_island2/scene.gltf', (gltf) => {
+earthIslandLoader.load('models/earth_island/scene.gltf', (gltf) => {
     const model = gltf.scene;
     model.position.x = -80;
     model.position.y = 10;
@@ -179,13 +163,13 @@ earthIslandLoader.load('models/desert_island2/scene.gltf', (gltf) => {
 
 // Water Island
 const waterIslandLoader = new GLTFLoader();
-waterIslandLoader.load('models/ice_island5/scene.gltf', (gltf) => {
+waterIslandLoader.load('models/water_island/scene.gltf', (gltf) => {
     const model = gltf.scene;
     model.position.x = 30;
     model.position.y = -2.3;
     model.position.z = 90;
     model.rotation.y = 90;
-    model.scale.set(40, 40, 40);
+    model.scale.set(50, 50, 50);
     scene.add(model);
 });
 
@@ -193,18 +177,19 @@ waterIslandLoader.load('models/ice_island5/scene.gltf', (gltf) => {
 
 // Fire Island
 const fireIslandLoader = new GLTFLoader();
-fireIslandLoader.load('models/volcano_island1/scene.gltf', (gltf) => {
+fireIslandLoader.load('models/fire_island/scene.gltf', (gltf) => {
     const model = gltf.scene;
     model.position.x = -80;
     model.position.y = -7;
     model.position.z = -80;
     model.rotation.y = 180;
     model.scale.set(2, 2, 2);
+    model.receiveShadow = true;
     scene.add(model);
 });
 
 const fireTempleLoader = new GLTFLoader();
-fireTempleLoader.load('models/fire_temple1/scene.gltf', (gltf) => {
+fireTempleLoader.load('models/fire_temple/scene.gltf', (gltf) => {
     const model = gltf.scene;
     model.scale.set(1, 1, 1);
     model.position.x = -80;
@@ -251,6 +236,7 @@ const cubeMaterial = new THREE.MeshStandardMaterial({
     metalness: 0.5,
 });
 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+cube.receiveShadow = true;
 scene.add(cube);
 
 // Set up animated grass on top of the cube
@@ -261,7 +247,6 @@ const grassGroup = new THREE.Group();
 for (let i = 0; i < grassCount; i++) {
   const grassBlade = new THREE.Mesh(grassGeometry, grassMaterial);
   grassBlade.castShadow = true;
-  grassBlade.receiveShadow = true;
   const randomX = Math.random() * 10 - 5;
   const randomZ = Math.random() * 10 - 5;
   grassBlade.position.set(randomX, 5, randomZ);
@@ -271,13 +256,6 @@ for (let i = 0; i < grassCount; i++) {
 scene.add(grassGroup);
 
 
-// LOD
-function updateLOD(camera) {
-    lodAirIsland.update(camera);
-    // Not working properly
-    // ... update other LOD objects as needed
-}
-
 // Animation
 const clock = new THREE.Clock();
 function animate() {
@@ -286,7 +264,6 @@ function animate() {
 
     // Grass Animation
     grassGroup.children.forEach((grassBlade, index) => {
-        const time = Date.now() * 0.002;
         const rotationAngle = Math.sin(time + index * 0.1) * 0.1;
         grassBlade.rotation.z = rotationAngle;
     });
@@ -301,18 +278,16 @@ function animate() {
     water.material.uniforms['time'].value += 1.0 / 60.0;
 
     //Air Island and Temple Animation
-    if (airTempleLoaded) {
+    if (airIslandLoaded) {
         airIslandLoaded.scene.position.y += Math.sin(time) * 0.1;
-        airTempleLoaded.scene.position.y += Math.sin(time) * 0.1;
     }
 
     stats.update();
-    updateLOD(camera);
-    requestAnimationFrame(animate);
     renderer.render(scene, camera);
+    requestAnimationFrame(animate);
 }
 
-animate();
+requestAnimationFrame(animate);
 
 
 // Event Listeners
@@ -331,7 +306,7 @@ function loadAssets() {
     setTimeout(() => {
         preloader.style.display = 'none';
         appContainer.style.display = 'block';
-        animate();
+        requestAnimationFrame(animate);
     }, 2000);
 }
 
