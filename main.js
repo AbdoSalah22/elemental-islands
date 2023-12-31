@@ -3,7 +3,17 @@ import Stats from 'three/addons/libs/stats.module.js';
 import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Water } from 'three/addons/objects/Water.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import {
+    gyroscopeMixer,
+    airIslandLoaded,
+    airPhoenixMixer,
+    firePhoenixMixer,
+    earthDragonMixer,
+    waterBirdMixer,
+    flameMixer,
+    shipLoaded,
+    loadModels, } from './modelLoader.js';
+
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -12,7 +22,6 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 renderer.setClearColor(0xFEFEFE);
 const scene = new THREE.Scene();
-
 
 // Camera
 const fieldOfView = 75;
@@ -23,7 +32,7 @@ const camera = new THREE.PerspectiveCamera(fieldOfView, aspectRatio, zNear, zFar
 
 // Orbit Controls
 const orbit = new OrbitControls(camera, renderer.domElement);
-camera.position.set(30, 40, 28);
+camera.position.set(250, 30, 20);
 orbit.update();
 
 // First Person Controls
@@ -50,7 +59,6 @@ camera.add(listener);
 const audioLoader = new THREE.AudioLoader();
 const sound = new THREE.PositionalAudio(listener);
 
-// Function to start audio playback
 function startAudioPlayback() {
   audioLoader.load('audio/korra.mp3',
     // Success callback
@@ -64,27 +72,16 @@ function startAudioPlayback() {
     }
   );
 }
-
-// Connect the audio source to the camera
 camera.add(sound);
 
-// Listen for the 'keydown' event on the document
-document.addEventListener('keydown', function (event) {
-  // Check if the pressed key is the keypad down arrow (key code 40)
-  if (event.code === 'ArrowDown') {
-    startAudioPlayback();
-  }
-});
-
-// Listen for a user interaction event (e.g., mouse click) to set up audio listener
 document.addEventListener('click', function () {
-  // Set up audio listener and start audio playback
   listener.context.resume().then(() => {
     startAudioPlayback();
   });
 });
 
-// Water
+
+// Generate Water
 const waterGeometry = new THREE.PlaneGeometry(1000, 1000);
 let water = new Water(
     waterGeometry,
@@ -125,113 +122,23 @@ scene.add(ambientLight);
 
 // Sun Light
 const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
-sunLight.position.set(50, 100, 5);
+sunLight.position.set(100, 100, 100);
 scene.add(sunLight);
 sunLight.castShadow = true;
+sunLight.shadow.mapSize.width = 1024;
+sunLight.shadow.mapSize.height = 1024;
+sunLight.shadow.camera.near = 0.5;
+sunLight.shadow.camera.far = 500;
 
 
 // Distant Fog
 scene.fog = new THREE.Fog(0xffffff, 600, 1000);
 
 
-// Air Island
-let airIslandLoaded;
-const airIslandLoader = new GLTFLoader();
-airIslandLoader.load('models/air_island/scene.gltf', (gltf) => {
-    airIslandLoaded = gltf;
-    const model = gltf.scene
-    model.position.x = 70;
-    model.position.y = 60;
-    model.position.z = 10;
-    model.scale.set(10, 10, 10);
-    scene.add(model);
-});
-
-
-// Earth Island
-const earthIslandLoader = new GLTFLoader();
-earthIslandLoader.load('models/earth_island/scene.gltf', (gltf) => {
-    const model = gltf.scene;
-    model.position.x = -80;
-    model.position.y = 10;
-    model.position.z = 80;
-    model.rotation.y = 180;
-    model.scale.set(5, 5, 5);
-    scene.add(model);
-});
-
-
-// Water Island
-const waterIslandLoader = new GLTFLoader();
-waterIslandLoader.load('models/water_island/scene.gltf', (gltf) => {
-    const model = gltf.scene;
-    model.position.x = 30;
-    model.position.y = -2.3;
-    model.position.z = 90;
-    model.rotation.y = 90;
-    model.scale.set(50, 50, 50);
-    scene.add(model);
-});
-
-
-
-// Fire Island
-const fireIslandLoader = new GLTFLoader();
-fireIslandLoader.load('models/fire_island/scene.gltf', (gltf) => {
-    const model = gltf.scene;
-    model.position.x = -80;
-    model.position.y = -7;
-    model.position.z = -80;
-    model.rotation.y = 180;
-    model.scale.set(2, 2, 2);
-    model.receiveShadow = true;
-    scene.add(model);
-});
-
-const fireTempleLoader = new GLTFLoader();
-fireTempleLoader.load('models/fire_temple/scene.gltf', (gltf) => {
-    const model = gltf.scene;
-    model.scale.set(1, 1, 1);
-    model.position.x = -80;
-    model.rotation.y = 45;
-    model.position.z = -25;
-    scene.add(model);
-    model.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-    })
-});
-
-
-// Flame Animated
-let flameMixer;
-const fireLoader = new GLTFLoader();
-fireLoader.load('models/fire_animation/scene.gltf', (gltf) => {
-    const model = gltf.scene;
-    model.position.x = -80;
-    model.position.y = 80;
-    model.position.z = -25;
-    model.scale.set(10, 10, 10);
-    scene.add(model);
-
-    const animations = gltf.animations;
-    if (animations && animations.length) {
-        flameMixer = new THREE.AnimationMixer(model);
-        animations.forEach((clip) => {
-            const action = flameMixer.clipAction(clip);
-            action.play();
-        });
-        model.flameMixer = flameMixer;
-    }
-});
-
-
 // Set up grass cube
 const cubeGeometry = new THREE.BoxGeometry(11, 10, 11);
 const cubeMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffff00,
+    color: 0xf3f3f3,
     roughness: 0.7,
     metalness: 0.5,
 });
@@ -240,7 +147,7 @@ cube.receiveShadow = true;
 scene.add(cube);
 
 // Set up animated grass on top of the cube
-const grassGeometry = new THREE.CylinderGeometry(0.01, 0.05, 6, 4); // Adjust parameters for pointy and thin grass
+const grassGeometry = new THREE.CylinderGeometry(0.01, 0.05, 4, 4); // Adjust parameters for pointy and thin grass
 const grassMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
 const grassCount = 2000;
 const grassGroup = new THREE.Group();
@@ -256,11 +163,20 @@ for (let i = 0; i < grassCount; i++) {
 scene.add(grassGroup);
 
 
+
+// Load all GLTF models
+loadModels(scene);
+
+
+
 // Animation
 const clock = new THREE.Clock();
 function animate() {
     const time = performance.now() * 0.001;
     const delta = clock.getDelta();
+    
+    // Water Animation
+    water.material.uniforms['time'].value += 1.0 / 60.0;
 
     // Grass Animation
     grassGroup.children.forEach((grassBlade, index) => {
@@ -268,20 +184,58 @@ function animate() {
         grassBlade.rotation.z = rotationAngle;
     });
 
+    if (sunLight){
+        // Adjust sun position for dynamic lighting
+        const radius = 300;
+        const speed = 0.5;
+        const angle = time * speed;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        sunLight.position.set(x, 100, z);
+    }
+
+    // Gyroscope Animation
+    if (gyroscopeMixer) {
+        gyroscopeMixer.update(delta);
+    }
+
+    //Air Island Animation
+    if (airIslandLoaded) {
+        airIslandLoaded.scene.position.y += Math.sin(time) * 0.1;
+    }
+    
     // Flame Animation
     if (flameMixer) {
         flameMixer.update(delta);
     }
-    controls.update(delta);
 
-    // Water Animation
-    water.material.uniforms['time'].value += 1.0 / 60.0;
-
-    //Air Island and Temple Animation
-    if (airIslandLoaded) {
-        airIslandLoaded.scene.position.y += Math.sin(time) * 0.1;
+    if (airPhoenixMixer){
+        airPhoenixMixer.update(delta);
+    }
+    
+    if (firePhoenixMixer){
+        firePhoenixMixer.update(delta);
     }
 
+    if (earthDragonMixer){
+        earthDragonMixer.update(delta);
+    }
+
+    if (waterBirdMixer){
+        waterBirdMixer.update(delta);
+    }
+
+    if (shipLoaded) {
+        const radius = 200;
+        const speed = 0.2;
+        const angle = time * speed;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        shipLoaded.scene.position.set(z, 0, x);
+        shipLoaded.scene.rotation.y = angle + Math.PI / 2;
+    }
+    
+    controls.update(delta);
     stats.update();
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
