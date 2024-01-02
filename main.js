@@ -3,6 +3,7 @@ import Stats from 'three/addons/libs/stats.module.js';
 import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Water } from 'three/addons/objects/Water.js';
+import { loadingScreen } from './loading.js';
 import {
     gyroscopeMixer,
     airIslandLoaded,
@@ -12,7 +13,7 @@ import {
     waterBirdMixer,
     flameMixer,
     shipLoaded,
-    loadModels, } from './modelLoader.js';
+    loadModels, } from './models.js';
 
 
 // Renderer
@@ -32,7 +33,7 @@ const camera = new THREE.PerspectiveCamera(fieldOfView, aspectRatio, zNear, zFar
 
 // Orbit Controls
 const orbit = new OrbitControls(camera, renderer.domElement);
-camera.position.set(250, 30, 20);
+camera.position.set(120, 10, 20);
 orbit.update();
 
 // First Person Controls
@@ -82,7 +83,7 @@ document.addEventListener('click', function () {
 
 
 // Generate Water
-const waterGeometry = new THREE.PlaneGeometry(1000, 1000);
+const waterGeometry = new THREE.PlaneGeometry(2000, 2000);
 let water = new Water(
     waterGeometry,
     {
@@ -106,7 +107,7 @@ scene.add(water);
 
 // Skybox
 const loader = new THREE.TextureLoader();
-const texture = loader.load('images/skybox2.jpeg');
+const texture = loader.load('images/skybox.jpeg');
 const geometry = new THREE.SphereGeometry(1000, 120, 80);
 geometry.scale(-1, 1, 1);
 const material = new THREE.MeshBasicMaterial({
@@ -122,23 +123,43 @@ scene.add(ambientLight);
 
 // Sun Light
 const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
-sunLight.position.set(100, 100, 100);
+sunLight.position.set(200, 300, 20);
 scene.add(sunLight);
 sunLight.castShadow = true;
-sunLight.shadow.mapSize.width = 1024;
-sunLight.shadow.mapSize.height = 1024;
-sunLight.shadow.camera.near = 0.5;
-sunLight.shadow.camera.far = 500;
+sunLight.shadow.mapSize.width = 2048;
+sunLight.shadow.mapSize.height = 2048;
+sunLight.shadow.camera.near = zNear;
+sunLight.shadow.camera.far = zFar;
 
 
-// Distant Fog
-scene.fog = new THREE.Fog(0xffffff, 600, 1000);
+// Distant Fog (not visually appealing)
+//scene.fog = new THREE.Fog(0xffffff, 600, 1000);
+
+
+// Moon
+const moonLoader = new THREE.TextureLoader();
+const moonTexture = loader.load('images/orb.jpg');
+const moonGeometry = new THREE.SphereGeometry(10, 10, 10);
+const moonMaterial = new THREE.MeshBasicMaterial({
+    map: moonTexture,
+    metalness: 0.9
+});
+const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+moonGeometry.scale(0.5, 0.5, 0.5);
+moon.position.x = 70;
+moon.position.y = 100;
+moon.position.z = 10;
+moon.castShadow = true;
+moon.receiveShadow = true;
+scene.add(moon);
 
 
 // Set up grass cube
 const cubeGeometry = new THREE.BoxGeometry(11, 10, 11);
+const cubeTextureLoader = new THREE.TextureLoader();
+const cubeTexture = cubeTextureLoader.load('images/sand.jpg');
 const cubeMaterial = new THREE.MeshStandardMaterial({
-    color: 0xf3f3f3,
+    map: cubeTexture,
     roughness: 0.7,
     metalness: 0.5,
 });
@@ -165,6 +186,7 @@ scene.add(grassGroup);
 
 
 // Load all GLTF models
+loadingScreen();
 loadModels(scene);
 
 
@@ -184,16 +206,6 @@ function animate() {
         grassBlade.rotation.z = rotationAngle;
     });
 
-    if (sunLight){
-        // Adjust sun position for dynamic lighting
-        const radius = 300;
-        const speed = 0.5;
-        const angle = time * speed;
-        const x = Math.cos(angle) * radius;
-        const z = Math.sin(angle) * radius;
-        sunLight.position.set(x, 100, z);
-    }
-
     // Gyroscope Animation
     if (gyroscopeMixer) {
         gyroscopeMixer.update(delta);
@@ -203,6 +215,10 @@ function animate() {
     if (airIslandLoaded) {
         airIslandLoaded.scene.position.y += Math.sin(time) * 0.1;
     }
+
+    // Moon Animation
+    moon.position.y += Math.sin(time) * 0.1;
+    moon.rotation.y += 0.5 * delta;
     
     // Flame Animation
     if (flameMixer) {
@@ -227,7 +243,7 @@ function animate() {
 
     if (shipLoaded) {
         const radius = 200;
-        const speed = 0.2;
+        const speed = 0.1;
         const angle = time * speed;
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
@@ -251,17 +267,3 @@ window.addEventListener('resize', function () {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-
-// Preloader
-const preloader = document.getElementById('preloader');
-const appContainer = document.getElementById('app');
-
-function loadAssets() {
-    setTimeout(() => {
-        preloader.style.display = 'none';
-        appContainer.style.display = 'block';
-        requestAnimationFrame(animate);
-    }, 2000);
-}
-
-loadAssets();

@@ -19,6 +19,8 @@ export function loadModels(scene) {
         const model = gltf.scene;
         model.position.y = 15;
         model.scale.set(20, 20, 20);
+        model.castShadow = true;
+        model.receiveShadow = true;
         scene.add(model);
 
         const animations = gltf.animations;
@@ -41,6 +43,8 @@ export function loadModels(scene) {
       model.position.y = 60;
       model.position.z = 10;
       model.scale.set(10, 10, 10);
+      model.castShadow = true;
+      model.receiveShadow = true;
       scene.add(model);
   });
 
@@ -135,7 +139,7 @@ export function loadModels(scene) {
   airPhoenixLoader.load('models/air_phoenix/scene.gltf', (gltf) => {
       const model = gltf.scene;
       model.position.x = 70;
-      model.position.y = 105;
+      model.position.y = 120;
       model.position.z = 10;
       model.rotation.y = Math.PI;
       model.scale.set(0.05, 0.05, 0.05);
