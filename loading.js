@@ -1,6 +1,3 @@
-
-
-
 // Loading Screen
 const preloader = document.getElementById('preloader');
 const appContainer = document.getElementById('app');

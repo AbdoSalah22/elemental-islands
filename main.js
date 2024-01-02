@@ -53,13 +53,11 @@ const axesHelper = new THREE.AxesHelper(4);
 scene.add(axesHelper);
 
 
-// Set up audio listener and load background music
+// Background music
 const listener = new THREE.AudioListener();
 camera.add(listener);
-
 const audioLoader = new THREE.AudioLoader();
 const sound = new THREE.PositionalAudio(listener);
-
 function startAudioPlayback() {
   audioLoader.load('audio/korra.mp3',
     // Success callback
@@ -82,6 +80,45 @@ document.addEventListener('click', function () {
 });
 
 
+// Load Sound Effect
+const soundEffectAudio = new THREE.Audio(listener);
+const soundEffectLoader = new THREE.AudioLoader();
+soundEffectLoader.load('audio/fire.mp3', function (buffer) {
+    soundEffectAudio.setBuffer(buffer);
+    soundEffectAudio.setLoop(false); // Adjust loop as needed
+    soundEffectAudio.setVolume(0); // Initial volume
+    soundEffectAudio.play();
+});
+
+// Create a position for the sound source
+const soundSourcePosition = new THREE.Vector3(-80, 45, -25); // Adjust the position
+
+
+// Create a fire particle
+const fireParticleGeometry = new THREE.TetrahedronGeometry(0.8);
+const fireParticleMaterial = new THREE.MeshBasicMaterial({ color: 0xff1f00 });
+const fireParticle = new THREE.Mesh(fireParticleGeometry, fireParticleMaterial);
+fireParticle.position.set(0, 15, 0); // Set the position to y = 20
+scene.add(fireParticle);
+
+// Add a point light at the position of the fire particle
+const pointLight = new THREE.PointLight(0xffa500, 200, 20);
+pointLight.position.copy(fireParticle.position);
+scene.add(pointLight);
+pointLight.castShadow = true;
+
+// Simple animation for the fire particle
+function animateFire() {
+    const speed = 0.1;
+
+    // Move the fire particle up and down for a flickering effect
+    fireParticle.position.y += Math.sin(Date.now() * speed) * 0.1;
+
+    // Rotate the fire particle for a dynamic look
+    fireParticle.rotation.x += 0.01;
+    fireParticle.rotation.y += 0.01;
+}
+
 // Generate Water
 const waterGeometry = new THREE.PlaneGeometry(2000, 2000);
 let water = new Water(
@@ -103,6 +140,16 @@ water.material.uniforms.size.value = 5;
 water.material.uniforms.alpha.value = 0.8;
 water.rotation.x = -Math.PI / 2;
 scene.add(water);
+
+// Load Ocean Waves Sound
+const oceanWavesAudio = new THREE.Audio(listener);
+const oceanWavesLoader = new THREE.AudioLoader();
+oceanWavesLoader.load('audio/waves.mp3', function (buffer) {
+    oceanWavesAudio.setBuffer(buffer);
+    oceanWavesAudio.setLoop(true);
+    oceanWavesAudio.setVolume(0.5); // Adjust the volume as needed
+    oceanWavesAudio.play();
+});
 
 
 // Skybox
@@ -191,6 +238,7 @@ loadModels(scene);
 
 
 
+
 // Animation
 const clock = new THREE.Clock();
 function animate() {
@@ -250,6 +298,24 @@ function animate() {
         shipLoaded.scene.position.set(z, 0, x);
         shipLoaded.scene.rotation.y = angle + Math.PI / 2;
     }
+
+    // Update audio listener position based on camera position
+    const { x, y, z } = camera.position;
+    listener.position.set(x, y, z);
+
+    // Set the position of the sound source
+    soundEffectAudio.position.copy(soundSourcePosition);
+
+    // Calculate distance between the listener and the sound source
+    const distance = listener.position.distanceTo(soundSourcePosition);
+
+    // Adjust the volume based on the distance
+    const maxDistance = 100; // Adjust the maximum distance for the effect
+    const volume = Math.max(0, 1 - distance / maxDistance);
+    soundEffectAudio.setVolume(volume);
+
+    animateFire();
+
     
     controls.update(delta);
     stats.update();
