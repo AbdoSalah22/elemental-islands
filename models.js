@@ -163,7 +163,6 @@ export function loadModels(scene) {
         model.position.x = -80;
         model.position.y = 100;
         model.position.z = -25;
-        //model.rotation.y = Math.PI;
         model.scale.set(15, 15, 15);
         scene.add(model);
 

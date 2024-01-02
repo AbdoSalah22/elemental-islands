@@ -8,7 +8,7 @@
 
 2. **Clone Repository**
    ```bash
-   git clone https://github.com/your-username/your-repository.git
+   git clone https://github.com/AbdoSalah22/elemental-islands.git
    
 3. **Install Dependencies**
 

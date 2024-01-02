@@ -1,20 +1,6 @@
 {
-  "name": "proj2",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "vite build",
-    "deploy": "gh-pages -d dist"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "gh-pages": "^6.1.1",
-    "three": "^0.160.0",
-    "three-particle-fire": "^0.1.0"
+    "three": "^0.160.0"
   },
   "devDependencies": {
     "vite": "^5.0.10"
